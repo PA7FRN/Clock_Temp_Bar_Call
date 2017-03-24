@@ -1,7 +1,7 @@
 /* Sketch voor datum, UTC tijd, Lokale tijd, temperatuur, lucht vochtigheid en luchtdruk
    in de shack te tonen op een I2C LCD display
    Er wordt hierbij gebruik gemaakt van een DS1307 RTC Clock module, een DHT11 Temperatuursensor
-   en een BMP280 luchtdruk sensor
+   en een BMP280 luchtdruk sensor. Als alternatief kan ook een DS3231 RTC gebruikt worden
 
    *************************************************************************************************
    *** De Clock module ***
@@ -14,22 +14,25 @@
    * Zet vooraf wel even de PC op UTC ! *
    * ************************************
 
-   Instellen datum en tijd (UTC) in de Clock module
+   Instellen datum en tijd (UTC) in de Clock module (methode 1)
    Ga hier voor naar de library DS1307RTC en ga naar Examples
    Kies hier in de map SetTime de sketch SetTime.ino, zet de Seriele monitor aan en run deze sketch.  
    Als alles goed doorlopen is, is nu de clock module geinitialiseerd en voorzien van de juiste
    datum en tijd. 
-   Naar keuze kan in de sketch naast UTC, de Winter of Zomertijd worden weergegeven.
-
+   
+   Instellen datum en tijd (UTC) in de Clock module (methode 2)
+   Gebruik hiervoor de aparte sketch "RTC Data and Time setter" welke op Internet
+   te vinden is. (WWW Sketch) Dan hoef je niet je PC eerst op UTC te zetten.
+    
    *** Barometer module ***
    Toegepast de BMP280
    Deze kan eventueel ook nog gebruikt worden om hoogte aan te geven
    ***********************************************************************************************
       
    Oorspronkelijke (beperkte) sketch van Timofte Andrei vertaald, aangepast, uitgebreid door PA0GTB
-   Versie 1.8.1 Maart 2017
-   
+   en verder gestructureerd door Edwin, PA7FRN
    Version 1.8.7 changed by PA7FRN and first commit in git repository.
+   Versie 1.8.8 Maart 2017
    
 */
    
@@ -43,6 +46,9 @@
 #include <DS1307RTC.h> 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
+
+const char* maand[] =
+ {"Dec", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov" }; //months of the week in Dutch abriviation
 
 // Declareer de constanten en Pin nummers
 
@@ -223,7 +229,7 @@ void toon_weather() {
   lcd.print(" mBar");
   
   Serial.println();
-  delay(1000);  // refresh elke sec  
+  delay(2000);  // refresh elke sec  
 }
 
 void printTime(time_t t, int col, int row) {
