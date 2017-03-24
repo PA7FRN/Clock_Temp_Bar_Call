@@ -47,9 +47,6 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
 
-const char* maand[] =
- {"Dec", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov" }; //months of the week in Dutch abriviation
-
 // Declareer de constanten en Pin nummers
 
 #define DHT11PIN 2 // dht11 signal pin connected to D2
