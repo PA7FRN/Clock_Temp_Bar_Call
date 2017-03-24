@@ -93,6 +93,7 @@
 #define CALLSIGN "PA0GTB" //Put your callsign here
 
 //Choose ad date format (DATE_FORMAT_dd_mm_yyyy or DATE_FORMAT_ddMMMyyyy)
+//static int dateFormat = DATE_FORMAT_dd_mm_yyyy;
 static int dateFormat = DATE_FORMAT_ddMMMyyyy;
 
 // change these strings if you want another lanuage
@@ -226,7 +227,7 @@ void toon_weather() {
   lcd.print(" mBar");
   
   Serial.println();
-  delay(2000);  // refresh elke sec  
+  delay(1000);  // refresh elke sec  
 }
 
 void printTime(time_t t, int col, int row) {
@@ -239,9 +240,9 @@ void printTime(time_t t, int col, int row) {
 }
 
 void printDate(time_t t, int col, int row) {
+  lcd.setCursor(col, row);
   switch (dateFormat) {
     case DATE_FORMAT_dd_mm_yyyy:
-      lcd.setCursor(col, row);
       sPrintDigits(day(t));
       lcd.print("-");
       sPrintDigits(month(t));
@@ -251,7 +252,7 @@ void printDate(time_t t, int col, int row) {
 	case DATE_FORMAT_ddMMMyyyy:
       sPrintDigits(day(t));
       lcd.print(strMonth[month(t)]);
-      sPrintDigits(month(t));
+      lcd.print(String(year(t)));
   }
 }
 
