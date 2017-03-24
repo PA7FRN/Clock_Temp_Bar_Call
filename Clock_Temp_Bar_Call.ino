@@ -70,6 +70,7 @@
 
 #define LCD_COL_CALL 1
 #define LCD_COL_DATE 9
+#define LCD_EMPTY_CALL "        "
 
 #define LCD_COL_UTC   0
 #define LCD_COL_TIME 10
@@ -91,18 +92,12 @@
 #define DATE_FORMAT_dd_mm_yyyy 0
 #define DATE_FORMAT_ddMMMyyyy  1
 
-// ----------- User preferences -------------
-#define CALLSIGN "PA0GTB" //Put your callsign here
-
-//Choose ad date format (DATE_FORMAT_dd_mm_yyyy or DATE_FORMAT_ddMMMyyyy)
-//static int dateFormat = DATE_FORMAT_dd_mm_yyyy;
 static int dateFormat = DATE_FORMAT_ddMMMyyyy;
 
 // change these strings if you want another lanuage
 String strMonth[12] = {
 	"JAN", "FEB", "MAR",  "APR",  "MEI",  "JUN",  "JUL",  "AUG",  "SEP",  "OKT",  "NOV",  "DEC"
 };
-// ----------- End User preferences ---------
 
 // Afwijkende sybolen maken
 
@@ -157,6 +152,7 @@ time_t utc;
 
 const unsigned long taskTime = 2000;
 unsigned long taskTimer = 0;
+String callsign = "PA0GTB";
 
 /* Display
    set the LCD address to 0x27 for a 20 chars 4 line display
@@ -190,7 +186,7 @@ void setup()   // SETUP: Wordt eenmaal doorlopen
   setSyncProvider(RTC.get);  
 
   lcd.setCursor(LCD_COL_CALL, LCD_ROW_CALL);
-  lcd.print(CALLSIGN);
+  lcd.print(callsign);
 
   lcd.setCursor(THERM_SYMBOL_COL, WETHER_ROW);
   lcd.write(THERM_SYMBOL);
@@ -218,10 +214,70 @@ void loop()   /*----( LOOP: RUNS CONSTANT )----*/
   printTime(t  , LCD_COL_TIME, LCD_ROW_TIME);
   printDate(t  , LCD_COL_DATE, LCD_ROW_DATE);
 
+  checkSerialInput();
+  
   unsigned long currentMillis = millis();
   if (currentMillis - taskTimer >= taskTime) {
     taskTimer = currentMillis;
     toon_weather();       //displaying temperatuur, vochtigheid en luchtdruk
+  }
+}
+
+void checkSerialInput() {
+  String input = Serial.readString();
+  if (input != "") {
+    Serial.println(input);
+    input.trim();
+    int idx = input.indexOf(" ");
+    String cmd = input;
+    String par = "";
+    if (idx > -1) {
+      cmd = input.substring(0, idx);
+      par = input.substring(idx+1);
+    }
+    cmd.trim();
+    par.trim();
+    handleCommand(cmd, par);
+  }
+}
+
+void handleCommand(String cmd, String par) {
+  if (cmd == "call") {
+    if ((par == "?") || (par == "")) {
+      Serial.println("type call folowed by callsign, like");
+      Serial.println("call PA7FRN");
+    }
+    else {
+      callsign = par;
+      lcd.setCursor(LCD_COL_CALL, LCD_ROW_CALL);
+      lcd.print(LCD_EMPTY_CALL);
+      lcd.setCursor(LCD_COL_CALL, LCD_ROW_CALL);
+      lcd.print(callsign);
+      Serial.print(callsign);
+      Serial.println(" set");
+    }
+  }
+  else if (cmd == "df") {
+    if (par == "dd_mm_yyyy") {
+      dateFormat = DATE_FORMAT_dd_mm_yyyy;
+      Serial.print(par);
+      Serial.println(" set");
+    }
+    else if (par == "ddMMMyyyy") {
+      dateFormat = DATE_FORMAT_ddMMMyyyy;
+      Serial.print(par);
+      Serial.println(" set");
+    }
+    else {
+      Serial.println("type df folowed by format. Valid formats are:");
+      Serial.println("df dd_mm_yyyy");
+      Serial.println("df ddMMMyyyy");
+    }
+  }
+  else {
+    Serial.println("Valid commands are:");
+    Serial.println("  call  to set the callsign");
+    Serial.println("  df    to set the date format");
   }
 }
 
@@ -235,12 +291,6 @@ void toon_weather() {
 //sPrintRightAlign(round(bme.readPressure()/100), 4, PRESSURE_VAL_COL, PRESSURE_ROW); // vrijzetten als sensor er straks aan hangt
   sPrintRightAlign(round(101500            /100), 4, PRESSURE_VAL_COL, PRESSURE_ROW); // Deze regel is nu alleen voor test op display
   lcd.print(" mBar");
-  
-  Serial.print("T="); 
-  Serial.print(String(DHT11.temperature)); 
-  Serial.print(" H="); 
-  Serial.print(String(DHT11.humidity)); 
-  Serial.println();
 }
 
 void printTime(time_t t, int col, int row) {
