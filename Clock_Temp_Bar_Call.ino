@@ -35,6 +35,7 @@
    Version 1.8.8 Maart 2017
    Version 1.8.9 Maart 2017 Date format
    Version 1.9.0 Maart 2017 Task management
+   Version 1.9.1 Maart 2017 Command line interface for setting callsign and date format
    
 */
    
