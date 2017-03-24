@@ -33,7 +33,8 @@
    en verder gestructureerd door Edwin, PA7FRN
    Version 1.8.7 changed by PA7FRN and first commit in git repository.
    Version 1.8.8 Maart 2017
-   Version 1.8.9 Maart 2017
+   Version 1.8.9 Maart 2017 Date format
+   Version 1.9.0 Maart 2017 Task management
    
 */
    
