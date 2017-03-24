@@ -154,6 +154,9 @@ Timezone CE(CEST, CET);
 TimeChangeRule *tcr;        //pointer to the time change rule, use to get the TZ abbrev
 time_t utc;
 
+const unsigned long taskTime = 2000;
+unsigned long taskTimer = 0;
+
 /* Display
    set the LCD address to 0x27 for a 20 chars 4 line display
    Set the pins on the I2C chip used for LCD connections: 
@@ -165,6 +168,7 @@ Adafruit_BMP280 bme; // I2C bus
 
 void setup()   // SETUP: Wordt eenmaal doorlopen
 {
+  Serial.begin(9600); 
   // Initialisatie display en gebruikte symbolen
   
   Wire.begin();
@@ -209,16 +213,20 @@ void loop()   /*----( LOOP: RUNS CONSTANT )----*/
 {
   utc = now();
   time_t t = CE.toLocal(utc, &tcr);
-  DHT11.read(DHT11PIN);
-    
   printTime(utc, LCD_COL_UTC , LCD_ROW_UTC );
   printTime(t  , LCD_COL_TIME, LCD_ROW_TIME);
   printDate(t  , LCD_COL_DATE, LCD_ROW_DATE);
-  toon_weather();       //displaying temperatuur, vochtigheid en luchtdruk
+
+  unsigned long currentMillis = millis();
+  if (currentMillis - taskTimer >= taskTime) {
+    taskTimer = currentMillis;
+    toon_weather();       //displaying temperatuur, vochtigheid en luchtdruk
+  }
 }
 
 void toon_weather() {
   // Toon temperatuur, vochtigheid en luchtdruk op het display
+  DHT11.read(DHT11PIN);
   sPrintRightAlign(DHT11.temperature, 2, THERM_VALUE_COL , WETHER_ROW);
   sPrintRightAlign(DHT11.humidity   , 2, HUMIDITY_VAL_COL, WETHER_ROW);
   
@@ -227,8 +235,11 @@ void toon_weather() {
   sPrintRightAlign(round(101500            /100), 4, PRESSURE_VAL_COL, PRESSURE_ROW); // Deze regel is nu alleen voor test op display
   lcd.print(" mBar");
   
+  Serial.print("T="); 
+  Serial.print(String(DHT11.temperature)); 
+  Serial.print(" H="); 
+  Serial.print(String(DHT11.humidity)); 
   Serial.println();
-  delay(1000);  // refresh elke sec  
 }
 
 void printTime(time_t t, int col, int row) {
