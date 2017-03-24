@@ -31,7 +31,9 @@
       
    Oorspronkelijke (beperkte) sketch van Timofte Andrei vertaald, aangepast, uitgebreid door PA0GTB
    en verder gestructureerd door Edwin, PA7FRN
+   Version 1.8.7 changed by PA7FRN and first commit in git repository.
    Versie 1.8.8 Maart 2017
+   
 */
    
 // Benoem de benodigde Libraries
@@ -44,9 +46,6 @@
 #include <DS1307RTC.h> 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
-
-const char* maand[] =
- {"Dec", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov" }; //months of the week in Dutch abriviation
 
 // Declareer de constanten en Pin nummers
 
@@ -87,7 +86,21 @@ const char* maand[] =
 #define HUMIDITY_SYMBOL 2
 #define PRESSURE_SYMBOL 3
 
-#define CALLSIGN "PA1BM"
+#define DATE_FORMAT_dd_mm_yyyy 0
+#define DATE_FORMAT_ddMMMyyyy  1
+
+// ----------- User preferences -------------
+#define CALLSIGN "PA0GTB" //Put your callsign here
+
+//Choose ad date format (DATE_FORMAT_dd_mm_yyyy or DATE_FORMAT_ddMMMyyyy)
+//static int dateFormat = DATE_FORMAT_dd_mm_yyyy;
+static int dateFormat = DATE_FORMAT_ddMMMyyyy;
+
+// change these strings if you want another lanuage
+String strMonth[12] = {
+	"JAN", "FEB", "MAR",  "APR",  "MEI",  "JUN",  "JUL",  "AUG",  "SEP",  "OKT",  "NOV",  "DEC"
+};
+// ----------- End User preferences ---------
 
 // Afwijkende sybolen maken
 
@@ -214,7 +227,7 @@ void toon_weather() {
   lcd.print(" mBar");
   
   Serial.println();
-  delay(2000);  // refresh elke sec  
+  delay(1000);  // refresh elke sec  
 }
 
 void printTime(time_t t, int col, int row) {
@@ -228,13 +241,20 @@ void printTime(time_t t, int col, int row) {
 
 void printDate(time_t t, int col, int row) {
   lcd.setCursor(col, row);
-  sPrintDigits(day(t));
-  lcd.print("-");
-  sPrintDigits(month(t));
-  lcd.print("-");
-  lcd.print(String(year(t)));
+  switch (dateFormat) {
+    case DATE_FORMAT_dd_mm_yyyy:
+      sPrintDigits(day(t));
+      lcd.print("-");
+      sPrintDigits(month(t));
+      lcd.print("-");
+      lcd.print(String(year(t)));
+	  break;
+	case DATE_FORMAT_ddMMMyyyy:
+      sPrintDigits(day(t));
+      lcd.print(strMonth[month(t)]);
+      lcd.print(String(year(t)));
+  }
 }
-
 
 void sPrintDigits(int val) {
   if(val < 10) {
