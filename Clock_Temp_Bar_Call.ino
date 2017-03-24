@@ -28,6 +28,9 @@
       
    Oorspronkelijke (beperkte) sketch van Timofte Andrei vertaald, aangepast, uitgebreid door PA0GTB
    Versie 1.8.1 Maart 2017
+   
+   Version 1.8.7 changed by PA7FRN and first commit in git repository.
+   
 */
    
 // Benoem de benodigde Libraries
@@ -80,7 +83,20 @@
 #define HUMIDITY_SYMBOL 2
 #define PRESSURE_SYMBOL 3
 
-#define CALLSIGN "PA0GTB"
+#define DATE_FORMAT_dd_mm_yyyy 0
+#define DATE_FORMAT_ddMMMyyyy  1
+
+// ----------- User preferences -------------
+#define CALLSIGN "PA0GTB" //Put your callsign here
+
+//Choose ad date format (DATE_FORMAT_dd_mm_yyyy or DATE_FORMAT_ddMMMyyyy)
+static int dateFormat = DATE_FORMAT_ddMMMyyyy;
+
+// change these strings if you want another lanuage
+String strMonth[12] = {
+	"JAN", "FEB", "MAR",  "APR",  "MEI",  "JUN",  "JUL",  "AUG",  "SEP",  "OKT",  "NOV",  "DEC"
+};
+// ----------- End User preferences ---------
 
 // Afwijkende sybolen maken
 
@@ -220,14 +236,21 @@ void printTime(time_t t, int col, int row) {
 }
 
 void printDate(time_t t, int col, int row) {
-  lcd.setCursor(col, row);
-  sPrintDigits(day(t));
-  lcd.print("-");
-  sPrintDigits(month(t));
-  lcd.print("-");
-  lcd.print(String(year(t)));
+  switch (dateFormat) {
+    case DATE_FORMAT_dd_mm_yyyy:
+      lcd.setCursor(col, row);
+      sPrintDigits(day(t));
+      lcd.print("-");
+      sPrintDigits(month(t));
+      lcd.print("-");
+      lcd.print(String(year(t)));
+	  break;
+	case DATE_FORMAT_ddMMMyyyy:
+      sPrintDigits(day(t));
+      lcd.print(strMonth[month(t)]);
+      sPrintDigits(month(t));
+  }
 }
-
 
 void sPrintDigits(int val) {
   if(val < 10) {
