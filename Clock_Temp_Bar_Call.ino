@@ -93,6 +93,8 @@
 #define DATE_FORMAT_dd_mm_yyyy 0
 #define DATE_FORMAT_ddMMMyyyy  1
 
+#define TIME_HEADER  "T"   // Header tag for serial time sync message
+
 static int dateFormat = DATE_FORMAT_ddMMMyyyy;
 
 // change these strings if you want another lanuage
@@ -275,10 +277,24 @@ void handleCommand(String cmd, String par) {
       Serial.println("df ddMMMyyyy");
     }
   }
+  else if (cmd == "T") {
+    unsigned long pctime;
+    const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013
+ 
+    pctime = par.toInt();
+    if( pctime >= DEFAULT_TIME) { // check the integer is a valid time (greater than Jan 1 2013)
+      setTime(pctime); // Sync Arduino clock to the time received on the serial port
+      Serial.println("time set");
+    }
+    else {
+      Serial.println("give the amount of seconds from 00:00 01-01-1970");
+    }
+  }
   else {
     Serial.println("Valid commands are:");
     Serial.println("  call  to set the callsign");
     Serial.println("  df    to set the date format");
+    Serial.println("  T     to set date and time");
   }
 }
 
