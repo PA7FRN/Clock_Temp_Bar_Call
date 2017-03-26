@@ -36,6 +36,8 @@
    Version 1.8.9 Maart 2017 Date format
    Version 1.9.0 Maart 2017 Task management
    Version 1.9.1 Maart 2017 Command line interface for setting callsign and date format
+   Version 1.9.2 Interface for setting time via serial port
+   Version 1.9.3 Write and read peferences to and from EEPROM
    
 */
    
