@@ -70,8 +70,9 @@
 #define PRESSURE_ROW 3
 
 #define LCD_COL_CALL 1
-#define LCD_COL_DATE 9
 #define LCD_EMPTY_CALL "        "
+#define LCD_COL_DATE 9
+#define LCD_EMPTY_DATE "          "
 
 #define LCD_COL_UTC   0
 #define LCD_COL_TIME 10
@@ -93,13 +94,15 @@
 #define DATE_FORMAT_dd_mm_yyyy 0
 #define DATE_FORMAT_ddMMMyyyy  1
 
-#define TIME_HEADER  "T"   // Header tag for serial time sync message
+#define CDM_TIME "T"
+#define CMD_CALL "call"
+#define CMD_DF   "df"
 
-static int dateFormat = DATE_FORMAT_ddMMMyyyy;
+static int dateFormat = DATE_FORMAT_dd_mm_yyyy;
 
 // change these strings if you want another lanuage
 String strMonth[12] = {
-	"JAN", "FEB", "MAR",  "APR",  "MEI",  "JUN",  "JUL",  "AUG",  "SEP",  "OKT",  "NOV",  "DEC"
+	"JAN", "FEB", "MRT",  "APR",  "MEI",  "JUN",  "JUL",  "AUG",  "SEP",  "OKT",  "NOV",  "DEC"
 };
 
 // Afwijkende sybolen maken
@@ -245,10 +248,13 @@ void checkSerialInput() {
 }
 
 void handleCommand(String cmd, String par) {
-  if (cmd == "call") {
+  if (cmd == CMD_CALL) {
     if ((par == "?") || (par == "")) {
-      Serial.println("type call folowed by callsign, like");
-      Serial.println("call PA7FRN");
+      Serial.print("type ");
+      Serial.print(CMD_CALL);
+      Serial.println(" folowed by callsign, like:");
+      Serial.print(CMD_CALL);
+      Serial.println(" PA7FRN");
     }
     else {
       callsign = par;
@@ -260,30 +266,38 @@ void handleCommand(String cmd, String par) {
       Serial.println(" set");
     }
   }
-  else if (cmd == "df") {
+  else if (cmd == CMD_DF) {
     if (par == "dd_mm_yyyy") {
+      lcd.setCursor(LCD_COL_DATE, LCD_ROW_DATE);
+      lcd.print(LCD_EMPTY_DATE);
       dateFormat = DATE_FORMAT_dd_mm_yyyy;
       Serial.print(par);
       Serial.println(" set");
     }
     else if (par == "ddMMMyyyy") {
+      lcd.setCursor(LCD_COL_DATE, LCD_ROW_DATE);
+      lcd.print(LCD_EMPTY_DATE);
       dateFormat = DATE_FORMAT_ddMMMyyyy;
       Serial.print(par);
       Serial.println(" set");
     }
     else {
-      Serial.println("type df folowed by format. Valid formats are:");
-      Serial.println("df dd_mm_yyyy");
-      Serial.println("df ddMMMyyyy");
+      Serial.print("type ");
+      Serial.print(CMD_DF);
+      Serial.println(" folowed by format. Valid formats are:");
+      Serial.print(CMD_DF);
+      Serial.println(" dd_mm_yyyy");
+      Serial.print(CMD_DF);
+      Serial.println(" ddMMMyyyy");
     }
   }
-  else if (cmd == "T") {
+  else if (cmd == CDM_TIME) {
     unsigned long pctime;
     const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013
  
     pctime = par.toInt();
-    if( pctime >= DEFAULT_TIME) { // check the integer is a valid time (greater than Jan 1 2013)
-      setTime(pctime); // Sync Arduino clock to the time received on the serial port
+    if( pctime >= DEFAULT_TIME) {
+      setTime(pctime); 
       Serial.println("time set");
     }
     else {
@@ -292,9 +306,15 @@ void handleCommand(String cmd, String par) {
   }
   else {
     Serial.println("Valid commands are:");
-    Serial.println("  call  to set the callsign");
-    Serial.println("  df    to set the date format");
-    Serial.println("  T     to set date and time");
+    Serial.print("  ");
+    Serial.print(CMD_CALL);
+    Serial.println(" to set the callsign"   );
+    Serial.print("  ");
+    Serial.print(CMD_DF);
+    Serial.println(" to set the date format");
+    Serial.print("  ");
+    Serial.print(CDM_TIME);
+    Serial.println(" to set date and time"  );
   }
 }
 
@@ -331,7 +351,7 @@ void printDate(time_t t, int col, int row) {
 	  break;
 	case DATE_FORMAT_ddMMMyyyy:
       sPrintDigits(day(t));
-      lcd.print(strMonth[month(t)]);
+      lcd.print(strMonth[month(t)-1]);
       lcd.print(String(year(t)));
   }
 }
