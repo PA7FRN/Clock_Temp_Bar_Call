@@ -49,6 +49,7 @@
 #include <DS1307RTC.h> 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
+#include <EEPROM.h>
 
 // Declareer de constanten en Pin nummers
 
@@ -69,9 +70,9 @@
 #define WETHER_ROW   2
 #define PRESSURE_ROW 3
 
-#define LCD_COL_CALL 1
-#define LCD_EMPTY_CALL "        "
-#define LCD_COL_DATE 9
+#define LCD_COL_CALL   0
+#define LCD_EMPTY_CALL "          "
+#define LCD_COL_DATE   10
 #define LCD_EMPTY_DATE "          "
 
 #define LCD_COL_UTC   0
@@ -93,12 +94,17 @@
 
 #define DATE_FORMAT_dd_mm_yyyy 0
 #define DATE_FORMAT_ddMMMyyyy  1
+#define DATE_FROMAT_MAX        1
 
 #define CDM_TIME "T"
 #define CMD_CALL "call"
 #define CMD_DF   "df"
 
-static int dateFormat = DATE_FORMAT_dd_mm_yyyy;
+#define ADDR_CALL        0
+#define ADDR_DATE_FORMAT 10
+
+
+int dateFormat = DATE_FORMAT_dd_mm_yyyy;
 
 // change these strings if you want another lanuage
 String strMonth[12] = {
@@ -169,12 +175,11 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 Adafruit_BMP280 bme; // I2C bus
 
-void setup()   // SETUP: Wordt eenmaal doorlopen
-{
+void setup() {
   Serial.begin(9600); 
-  // Initialisatie display en gebruikte symbolen
-  
   Wire.begin();
+
+  // Initialisatie display en gebruikte symbolen
   lcd.begin(LCD_COL_COUNT, LCD_ROW_COUNT);
   lcd.backlight();
   lcd.clear();
@@ -183,13 +188,18 @@ void setup()   // SETUP: Wordt eenmaal doorlopen
   lcd.createChar(PRESSURE_SYMBOL,pressure);
 
   // Get time from RTC
-
   Wire.beginTransmission(0x68);
   Wire.write(0x07); // move pointer to SQW address
   Wire.write(0x10); // sends 0x10 (hex) 00010000 (binary) to control register - turns on square wave
   Wire.endTransmission();
 
   setSyncProvider(RTC.get);  
+
+  callsign = stringFromEeprom(ADDR_CALL);
+  dateFormat = EEPROM.read(ADDR_DATE_FORMAT);
+  if (dateFormat > DATE_FROMAT_MAX) {
+    dateFormat = 0;
+  }
 
   lcd.setCursor(LCD_COL_CALL, LCD_ROW_CALL);
   lcd.print(callsign);
@@ -210,10 +220,9 @@ void setup()   // SETUP: Wordt eenmaal doorlopen
   lcd.setCursor(PRESSURE_SYMBOL_COL, PRESSURE_ROW);
   lcd.write(PRESSURE_SYMBOL);
   lcd.print(F(" ="));
-}/*--(end setup )---*/
+}
 
-void loop()   /*----( LOOP: RUNS CONSTANT )----*/
-{
+void loop() {
   utc = now();
   time_t t = CE.toLocal(utc, &tcr);
   printTime(utc, LCD_COL_UTC , LCD_ROW_UTC );
@@ -262,6 +271,7 @@ void handleCommand(String cmd, String par) {
       lcd.print(LCD_EMPTY_CALL);
       lcd.setCursor(LCD_COL_CALL, LCD_ROW_CALL);
       lcd.print(callsign);
+      stringToEeprom(ADDR_CALL, callsign);
       Serial.print(callsign);
       Serial.println(" set");
     }
@@ -271,6 +281,7 @@ void handleCommand(String cmd, String par) {
       lcd.setCursor(LCD_COL_DATE, LCD_ROW_DATE);
       lcd.print(LCD_EMPTY_DATE);
       dateFormat = DATE_FORMAT_dd_mm_yyyy;
+      EEPROM.write(ADDR_DATE_FORMAT, dateFormat);
       Serial.print(par);
       Serial.println(" set");
     }
@@ -278,6 +289,7 @@ void handleCommand(String cmd, String par) {
       lcd.setCursor(LCD_COL_DATE, LCD_ROW_DATE);
       lcd.print(LCD_EMPTY_DATE);
       dateFormat = DATE_FORMAT_ddMMMyyyy;
+      EEPROM.write(ADDR_DATE_FORMAT, dateFormat);
       Serial.print(par);
       Serial.println(" set");
     }
@@ -348,11 +360,12 @@ void printDate(time_t t, int col, int row) {
       sPrintDigits(month(t));
       lcd.print("-");
       lcd.print(String(year(t)));
-	  break;
-	case DATE_FORMAT_ddMMMyyyy:
+  	  break;
+  	case DATE_FORMAT_ddMMMyyyy:
       sPrintDigits(day(t));
       lcd.print(strMonth[month(t)-1]);
       lcd.print(String(year(t)));
+      break;
   }
 }
 
@@ -372,5 +385,23 @@ void sPrintRightAlign(int val, int positions, int col, int row) {
   lcd.print(strVal);
 }
 
+void stringToEeprom(int eepromAddress, String aString) {
+  int stringLength = aString.length();
+  EEPROM.write(eepromAddress, stringLength);
+  for (int i=0; i<stringLength; i++) {
+    EEPROM.write(eepromAddress+1+i, aString[i]);
+  }
+}
+
+String stringFromEeprom(int eepromAddress) {
+  String resultString = "";
+  int stringLength = EEPROM.read(eepromAddress);
+  for (int i=0; i<stringLength; i++) {
+    resultString = resultString + " ";
+    resultString[i] = EEPROM.read(eepromAddress+1+i);
+  }
+  return resultString;
+}
+  
 /* ( THE END ) */
 
