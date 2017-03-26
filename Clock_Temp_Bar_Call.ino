@@ -71,7 +71,7 @@
 #define PRESSURE_ROW 3
 
 #define LCD_COL_CALL   0
-#define LCD_EMPTY_CALL "         "
+#define LCD_EMPTY_CALL "          "
 #define LCD_COL_DATE   10
 #define LCD_EMPTY_DATE "          "
 
