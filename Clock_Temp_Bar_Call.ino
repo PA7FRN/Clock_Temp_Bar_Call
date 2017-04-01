@@ -38,11 +38,9 @@
    Version 1.9.1 Maart 2017 Command line interface for setting callsign and date format
    Version 1.9.2 Interface for setting time via serial port
    Version 1.9.3 Write and read peferences to and from EEPROM
-   
+   Version 1.9.4 Use other temperature/hunidity sensor. Add decimal to temperature and hunidity value. Show version on LCD
 */
    
-// Benoem de benodigde Libraries
-
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <AM2320.h>  // nieuwe sensor
@@ -53,7 +51,7 @@
 #include <Adafruit_BMP280.h>
 #include <EEPROM.h>
 
-// Declareer de constanten en Pin nummers
+#define VERSION_STRING "V1.9.4"
 
 #define BMP_SCK 13
 #define BMP_MISO 12
@@ -68,16 +66,20 @@
 #define LCD_ROW_UTC  1
 #define LCD_ROW_TIME 1
 #define WETHER_ROW   2
+#define VERSION_ROW  3
 #define PRESSURE_ROW 3
 
+//positions in LCD row 0
 #define LCD_COL_CALL   0
 #define LCD_EMPTY_CALL "          "
 #define LCD_COL_DATE   10
 #define LCD_EMPTY_DATE "          "
 
+//positions in LCD row 1
 #define LCD_COL_UTC   0
 #define LCD_COL_TIME 10
 
+//positions in LCD row 2
 #define THERM_SYMBOL_COL     0
 #define THERM_VALUE_COL      2
 #define GRAD_SYMBOL_COL      6
@@ -85,8 +87,11 @@
 #define HUMIDITY_VAL_COL    12
 #define PROC_SYMBOL_COL     16
 
-#define PRESSURE_SYMBOL_COL 3
-#define PRESSURE_VAL_COL    8
+//positions in LCD row 3
+#define VERSION_COL          0
+#define PRESSURE_SYMBOL_COL 10
+#define PRESSURE_VAL_COL    12
+#define MBAR_COL            16
 
 #define THERM_SYMBOL    1
 #define HUMIDITY_SYMBOL 2
@@ -164,7 +169,7 @@ time_t utc;
 
 const unsigned long taskTime = 2000;
 unsigned long taskTimer = 0;
-String callsign = "PA0GTB";
+String callsign = "<callsign>";
 
 /* Display
    set the LCD address to 0x27 for a 20 chars 4 line display
@@ -217,9 +222,13 @@ void setup() {
   lcd.setCursor(PROC_SYMBOL_COL, WETHER_ROW);
   lcd.print("%");
 
+  lcd.setCursor(VERSION_COL, VERSION_ROW);
+  lcd.write(VERSION_STRING);
+
   lcd.setCursor(PRESSURE_SYMBOL_COL, PRESSURE_ROW);
   lcd.write(PRESSURE_SYMBOL);
-  lcd.print(F(" ="));
+  lcd.setCursor(MBAR_COL, PRESSURE_ROW);
+  lcd.print("mBar");
 }
 
 void loop() {
@@ -341,7 +350,6 @@ void toon_weather() {
   // barometer
 //sPrintRightAlign((bme.readPressure()/100), 4, 0, PRESSURE_VAL_COL, PRESSURE_ROW); // vrijzetten als sensor er straks aan hangt
   sPrintRightAlign((101500            /100), 4, 0, PRESSURE_VAL_COL, PRESSURE_ROW); // Deze regel is nu alleen voor test op display
-  lcd.print(" mBar");
 }
 
 void printTime(time_t t, int col, int row) {
