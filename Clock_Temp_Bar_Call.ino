@@ -227,7 +227,7 @@ void setup() {
 void loop() {
   utc = now();
   time_t t = CE.toLocal(utc, &tcr);
-  th.Read();
+
   printTime(utc, LCD_COL_UTC , LCD_ROW_UTC );
   printTime(t  , LCD_COL_TIME, LCD_ROW_TIME);
   printDate(t  , LCD_COL_DATE, LCD_ROW_DATE);
@@ -334,6 +334,8 @@ void handleCommand(String cmd, String par) {
 }
 
 void toon_weather() {
+  th.Read();
+
   // Toon temperatuur, vochtigheid en luchtdruk op het display
   sPrintRightAlign(th.t, DHT11PIN, THERM_VALUE_COL , WETHER_ROW);
   sPrintRightAlign(th.h, DHT11PIN, HUMIDITY_VAL_COL, WETHER_ROW);
