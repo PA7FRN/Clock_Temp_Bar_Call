@@ -55,8 +55,6 @@
 
 // Declareer de constanten en Pin nummers
 
-#define DHT11PIN 2 // dht11 signal pin connected to D2
-
 #define BMP_SCK 13
 #define BMP_MISO 12
 #define BMP_MOSI 11 
@@ -80,12 +78,12 @@
 #define LCD_COL_UTC   0
 #define LCD_COL_TIME 10
 
-#define THERM_SYMBOL_COL     1
-#define THERM_VALUE_COL      3
-#define GRAD_SYMBOL_COL      5
+#define THERM_SYMBOL_COL     0
+#define THERM_VALUE_COL      2
+#define GRAD_SYMBOL_COL      6
 #define HUMIDITY_SYMBOL_COL 10
 #define HUMIDITY_VAL_COL    12
-#define PROC_SYMBOL_COL     14
+#define PROC_SYMBOL_COL     16
 
 #define PRESSURE_SYMBOL_COL 3
 #define PRESSURE_VAL_COL    8
@@ -337,12 +335,12 @@ void toon_weather() {
   th.Read();
 
   // Toon temperatuur, vochtigheid en luchtdruk op het display
-  sPrintRightAlign(th.t, DHT11PIN, THERM_VALUE_COL , WETHER_ROW);
-  sPrintRightAlign(th.h, DHT11PIN, HUMIDITY_VAL_COL, WETHER_ROW);
+  sPrintRightAlign(th.t, 4, 1, THERM_VALUE_COL , WETHER_ROW);
+  sPrintRightAlign(th.h, 4, 1, HUMIDITY_VAL_COL, WETHER_ROW);
   
   // barometer
-//sPrintRightAlign(round(bme.readPressure()/100), 4, PRESSURE_VAL_COL, PRESSURE_ROW); // vrijzetten als sensor er straks aan hangt
-  sPrintRightAlign(round(101500            /100), 4, PRESSURE_VAL_COL, PRESSURE_ROW); // Deze regel is nu alleen voor test op display
+//sPrintRightAlign((bme.readPressure()/100), 4, 0, PRESSURE_VAL_COL, PRESSURE_ROW); // vrijzetten als sensor er straks aan hangt
+  sPrintRightAlign((101500            /100), 4, 0, PRESSURE_VAL_COL, PRESSURE_ROW); // Deze regel is nu alleen voor test op display
   lcd.print(" mBar");
 }
 
@@ -380,9 +378,9 @@ void sPrintDigits(int val) {
   lcd.print(String(val));
 }
 
-void sPrintRightAlign(int val, int positions, int col, int row) {
+void sPrintRightAlign(float val, int positions, int decimals, int col, int row) {
   lcd.setCursor(col, row);
-  String strVal = String(val);
+  String strVal = String(val, decimals);
   while (strVal.length() < positions) {
     strVal = " " + strVal;
   }
