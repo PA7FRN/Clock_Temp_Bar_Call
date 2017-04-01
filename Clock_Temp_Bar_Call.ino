@@ -34,7 +34,7 @@
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <dht11.h>
+#include <AM2320.h>  // nieuwe sensor
 #include <Time.h>
 #include <Timezone.h>    
 #include <DS1307RTC.h> 
@@ -123,7 +123,7 @@ byte pressure[8] = //symbool voor Luchtdruk
 // Declareer de verschillende objecten
 
 // Temperatuur en vochtigheid Sensor
-dht11 DHT11;
+AM2320 th;
 
 //Central European Time (Amsterdam, Frankfurt, Paris)
 TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120};     //Central European Summer Time
@@ -188,7 +188,7 @@ void loop()   /*----( LOOP: RUNS CONSTANT )----*/
 {
   utc = now();
   time_t t = CE.toLocal(utc, &tcr);
-  DHT11.read(DHT11PIN);
+  th.Read();
     
   printTime(utc, LCD_COL_UTC , LCD_ROW_UTC );
   printTime(t  , LCD_COL_TIME, LCD_ROW_TIME);
@@ -198,8 +198,8 @@ void loop()   /*----( LOOP: RUNS CONSTANT )----*/
 
 void toon_weather() {
   // Toon temperatuur, vochtigheid en luchtdruk op het display
-  sPrintRightAlign(DHT11.temperature, 2, THERM_VALUE_COL , WETHER_ROW);
-  sPrintRightAlign(DHT11.humidity   , 2, HUMIDITY_VAL_COL, WETHER_ROW);
+  sPrintRightAlign(th.t, DHT11PIN, THERM_VALUE_COL , WETHER_ROW);
+  sPrintRightAlign(th.h, DHT11PIN, HUMIDITY_VAL_COL, WETHER_ROW);
   
   // barometer
 //sPrintRightAlign(round(bme.readPressure()/100), 4, PRESSURE_VAL_COL, PRESSURE_ROW); // vrijzetten als sensor er straks aan hangt
