@@ -39,6 +39,7 @@
    Version 1.9.2 Interface for setting time via serial port
    Version 1.9.3 Write and read peferences to and from EEPROM
    Version 1.9.4 Use other temperature/hunidity sensor. Add decimal to temperature and hunidity value. Show version on LCD
+   Version 1.9.5 Show welcome text with version number and list off commands at startup / start of serial connection. Version removed from display.
 */
    
 #include <Wire.h>
@@ -51,7 +52,7 @@
 #include <Adafruit_BMP280.h>
 #include <EEPROM.h>
 
-#define VERSION_STRING "V1.9.4"
+#define VERSION_STRING "V1.9.5"
 
 #define BMP_SCK 13
 #define BMP_MISO 12
@@ -88,10 +89,9 @@
 #define PROC_SYMBOL_COL     16
 
 //positions in LCD row 3
-#define VERSION_COL          0
-#define PRESSURE_SYMBOL_COL 10
-#define PRESSURE_VAL_COL    12
-#define MBAR_COL            16
+#define PRESSURE_SYMBOL_COL  4
+#define PRESSURE_VAL_COL     7
+#define MBAR_COL            12
 
 #define THERM_SYMBOL    1
 #define HUMIDITY_SYMBOL 2
@@ -101,9 +101,10 @@
 #define DATE_FORMAT_ddMMMyyyy  1
 #define DATE_FROMAT_MAX        1
 
-#define CDM_TIME "T"
-#define CMD_CALL "call"
-#define CMD_DF   "df"
+#define CDM_TIME    "T"
+#define CMD_CALL    "call"
+#define CMD_DF      "df"
+#define CMD_VERSION "ver"
 
 #define ADDR_CALL        0
 #define ADDR_DATE_FORMAT 10
@@ -222,13 +223,15 @@ void setup() {
   lcd.setCursor(PROC_SYMBOL_COL, WETHER_ROW);
   lcd.print("%");
 
-  lcd.setCursor(VERSION_COL, VERSION_ROW);
-  lcd.write(VERSION_STRING);
-
   lcd.setCursor(PRESSURE_SYMBOL_COL, PRESSURE_ROW);
   lcd.write(PRESSURE_SYMBOL);
+  lcd.print("=");
   lcd.setCursor(MBAR_COL, PRESSURE_ROW);
   lcd.print("mBar");
+
+  Serial.println("Clock_Temp_Bar_Call " + String(VERSION_STRING));
+  Serial.println("Settings can be made via this serial interface.");
+  handleCommand("", "");
 }
 
 void loop() {
@@ -251,6 +254,7 @@ void loop() {
 void checkSerialInput() {
   String input = Serial.readString();
   if (input != "") {
+    Serial.println();
     Serial.println(input);
     input.trim();
     int idx = input.indexOf(" ");
@@ -326,6 +330,9 @@ void handleCommand(String cmd, String par) {
       Serial.println("give the amount of seconds from 00:00 01-01-1970");
     }
   }
+  else if (cmd ==  CMD_VERSION) {
+    Serial.println(VERSION_STRING);
+  }
   else {
     Serial.println("Valid commands are:");
     Serial.print("  ");
@@ -337,6 +344,9 @@ void handleCommand(String cmd, String par) {
     Serial.print("  ");
     Serial.print(CDM_TIME);
     Serial.println(" to set date and time"  );
+    Serial.print("  ");
+    Serial.print(CMD_VERSION);
+    Serial.println(" gives the version number"  );
   }
 }
 
