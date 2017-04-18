@@ -1,63 +1,82 @@
-/* Sketch voor datum, UTC tijd, Lokale tijd, temperatuur, lucht vochtigheid en luchtdruk
-   in de shack te tonen op een I2C LCD display
-   Er wordt hierbij gebruik gemaakt van een DS1307 RTC Clock module, een DHT11 Temperatuursensor
-   en een BMP280 luchtdruk sensor. Als alternatief kan ook een DS3231 RTC gebruikt worden
-
-   *************************************************************************************************
-   *** De Clock module ***
-   Initialisatie van de datum en tijd op basis van UTC in de DS1307 RTC module
-   Dit moet voorafgaande aan deze sketch 1x uitgevoerd worden om de datum en tijd in de clock module
-   goed te zetten op UTC tijd
-   Dit kan aan de hand van het voorbeeld wat in de Library van de DS1307 staat
-
-   ************************************** 
-   * Zet vooraf wel even de PC op UTC ! *
-   * ************************************
-
-   Instellen datum en tijd (UTC) in de Clock module (methode 1)
-   Ga hier voor naar de library DS1307RTC en ga naar Examples
-   Kies hier in de map SetTime de sketch SetTime.ino, zet de Seriele monitor aan en run deze sketch.  
-   Als alles goed doorlopen is, is nu de clock module geinitialiseerd en voorzien van de juiste
-   datum en tijd. 
+/* HAM Shack Information Display
+ **************************************************************************************************  
+ *  Sketch to display Callsign, Date, UTC and Local Time, Temperature, Humidity and Barometric 
+ *  Airpressure on a 20 x 4 I2C LCD display
+ *  This sketch is designed on a Arduino Nano. Arduino Uno is tested without any problem.
+ *  Using a DS1307 Clockmodule, a AM2320 (DHT11) or similar Temperature and Humidity sensor and a BMP250 Barometric
+ *  Airpressure sensor on Arduino.
+ *  For the clockmodule you can also use a DS3231 RTC without need to change the library
+ *  This sketch provides automatic switching of Summer- and Wintertime based on Central Europeen Time
+ ****************************************************************************************************
    
-   Instellen datum en tijd (UTC) in de Clock module (methode 2)
-   Gebruik hiervoor de aparte sketch "RTC Data and Time setter" welke op Internet
-   te vinden is. (WWW Sketch) Dan hoef je niet je PC eerst op UTC te zetten.
+   *** Clockmodule *** 
+   Initialisation of date and time, based on UTC, has te be done before running this sketch
+   For this purpose, you can use the SetTime example in the library of the DS1307 Clockmodule
+   You have to do this only once
+   
+   *** Initialisation Date and Time (UTC) in Clockmodule ***
+   ************************************* 
+   * Switch your PC to UTC time first ! * 
+   * ***********************************
+   Go to the DS1307 Library amd select Examples
+   Select the directory SetTime and the sketch TimeSet.ino
+   Put on the Serial Monitor and run this sketch
+   Date and time will be set automaticaly.
+   Close this temporary sketch and run this HAM Shack Display sketch
+   
+***************************************************************************************************
+
+   *** Personal info and Selections ***
+   Via the serial monitor you can set your Callsign and preferences for the Date format
+   Help information is provided
+   
+   ***  CALLSIGN ***
+   Put in your own Callsign
+   
+   *** Date format ***
+   Select your preferences to display the Date Format
+   You can select : dd-mm-yyy or ddMMMyyyy ( Example: 10-04-2017 of 10APR2017
+   
+   *** Backlight ***
+   Its possible to switch On and Off the Backlight via a push button.
+   Pin D4 is input. Take Pin D4 with a 100K resistor to ground
+   Connect the push button between +5 V and Pin D4 ( Arduino Nano)
     
-   *** Barometer module ***
-   Toegepast de BMP280
-   Deze kan eventueel ook nog gebruikt worden om hoogte aan te geven
+   *** Barometric module ***
+   In this sketch the Adafruit BMP280 is used, because this sensor can use 5V power and I2C bus
+   Barometric Airpressure is displayed in hPa
+
+   *** Corrections of displayed values ***
+   Not all available sensors are equal
+   If necessary, you can correct the displayed value of Temperature, Humidity and Barometric Air Pressure
+   for your environment. See the mentioned lines in the sketch
+   
    ***********************************************************************************************
-      
-   Oorspronkelijke (beperkte) sketch van Timofte Andrei vertaald, aangepast, uitgebreid door PA0GTB
-   en verder gestructureerd door Edwin, PA7FRN
-   Version 1.8.7 changed by PA7FRN and first commit in git repository.
-   Version 1.8.8 Maart 2017
-   Version 1.8.9 Maart 2017 Date format
-   Version 1.9.0 Maart 2017 Task management
-   Version 1.9.1 Maart 2017 Command line interface for setting callsign and date format
-   Version 1.9.2 Interface for setting time via serial port
-   Version 1.9.3 Write and read peferences to and from EEPROM
-   Version 1.9.4 Use other temperature/hunidity sensor. Add decimal to temperature and hunidity value. Show version on LCD
-   Version 1.9.5 Show welcome text with version number and list off commands at startup / start of serial connection. Version removed from display.
+   This sketch is based on the original simple design "Clock with Thermometer using Arduino" by Timofte Andrei, 
+   Translated and modified by Cor Struyk PA0GTB. The code is altered and further structured by Edwin Arts, PA7FRN  
+   Final Version 1.0 15 April 2017
+   **********************************************************************************************
 */
    
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <AM2320.h>  // nieuwe sensor
+#include <AM2320.h>          // temperature / humidity sensor
 #include <Time.h>
 #include <Timezone.h>    
-#include <DS1307RTC.h> 
+#include <DS1307RTC.h>       // Clockmodule
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BMP280.h>
+#include <Adafruit_BMP280.h> // Barometric sensor
 #include <EEPROM.h>
 
-#define VERSION_STRING "V1.9.5"
+#define VERSION_STRING "V1.0"
 
 #define BMP_SCK 13
 #define BMP_MISO 12
 #define BMP_MOSI 11 
 #define BMP_CS 10
+
+#define LED_OFF 0
+#define LED_ON 1
 
 #define LCD_ROW_COUNT  4
 #define LCD_COL_COUNT 20
@@ -66,12 +85,12 @@
 #define LCD_ROW_CALL 0
 #define LCD_ROW_UTC  1
 #define LCD_ROW_TIME 1
-#define WETHER_ROW   2
-#define VERSION_ROW  3
+#define WEATHER_ROW   2
+
 #define PRESSURE_ROW 3
 
 //positions in LCD row 0
-#define LCD_COL_CALL   0
+#define LCD_COL_CALL   1
 #define LCD_EMPTY_CALL "          "
 #define LCD_COL_DATE   10
 #define LCD_EMPTY_DATE "          "
@@ -91,7 +110,7 @@
 //positions in LCD row 3
 #define PRESSURE_SYMBOL_COL  4
 #define PRESSURE_VAL_COL     7
-#define MBAR_COL            12
+#define MBAR_COL            14
 
 #define THERM_SYMBOL    1
 #define HUMIDITY_SYMBOL 2
@@ -99,27 +118,24 @@
 
 #define DATE_FORMAT_dd_mm_yyyy 0
 #define DATE_FORMAT_ddMMMyyyy  1
-#define DATE_FROMAT_MAX        1
+#define DATE_FORMAT_MAX        1
 
-#define CDM_TIME    "T"
 #define CMD_CALL    "call"
 #define CMD_DF      "df"
-#define CMD_VERSION "ver"
 
 #define ADDR_CALL        0
 #define ADDR_DATE_FORMAT 10
 
-
 int dateFormat = DATE_FORMAT_dd_mm_yyyy;
 
-// change these strings if you want another lanuage
+// change these strings if you want another language than Dutch
 String strMonth[12] = {
 	"JAN", "FEB", "MRT",  "APR",  "MEI",  "JUN",  "JUL",  "AUG",  "SEP",  "OKT",  "NOV",  "DEC"
 };
 
-// Afwijkende sybolen maken
+// Design of special Symbols
 
-byte thermometer[8] = //symbool voor thermometer
+byte thermometer[8] = // Thermometer Symbol
 {
     B00100,
     B01010,
@@ -131,7 +147,7 @@ byte thermometer[8] = //symbool voor thermometer
     B01110
 };
 
-byte humiditySymbol[8] = //symbool voor waterdruppel 
+byte humiditySymbol[8] = // Humidity Symbol 
 {
     B00100,
     B00100,
@@ -143,7 +159,7 @@ byte humiditySymbol[8] = //symbool voor waterdruppel
     B01110,
 };
 
-byte pressure[8] = //symbool voor Luchtdruk 
+byte pressure[8] = // Airpressure Symbol 
 {
     B11111,
     B10001,
@@ -155,10 +171,13 @@ byte pressure[8] = //symbool voor Luchtdruk
     B10000
 };
 
-// Declareer de verschillende objecten
+// Declare several Objects
 
-// Temperatuur en vochtigheid Sensor
+// Temperature and Humidity Sensor
 AM2320 th;
+
+// Barometric sensor
+Adafruit_BMP280 bme; // I2C bus
 
 //Central European Time (Amsterdam, Frankfurt, Paris)
 TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120};     //Central European Summer Time
@@ -179,15 +198,21 @@ String callsign = "<callsign>";
 
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  
 
-Adafruit_BMP280 bme; // I2C bus
+// Initital state of inputs for switching backlight display
+int i=0;
+int a=0;
 
 void setup() {
   Serial.begin(9600); 
   Wire.begin();
+  !bme.begin();
+  
+  pinMode(4, INPUT);  // input for switching Backlight
 
-  // Initialisatie display en gebruikte symbolen
+  // Initialisation of display and used Symbols
   lcd.begin(LCD_COL_COUNT, LCD_ROW_COUNT);
-  lcd.backlight();
+  lcd.setBacklight(LED_OFF);  // Switch backlight OFF
+  
   lcd.clear();
   lcd.createChar(THERM_SYMBOL,thermometer);
   lcd.createChar(HUMIDITY_SYMBOL,humiditySymbol);
@@ -203,41 +228,51 @@ void setup() {
 
   callsign = stringFromEeprom(ADDR_CALL);
   dateFormat = EEPROM.read(ADDR_DATE_FORMAT);
-  if (dateFormat > DATE_FROMAT_MAX) {
+  if (dateFormat > DATE_FORMAT_MAX) {
     dateFormat = 0;
   }
 
   lcd.setCursor(LCD_COL_CALL, LCD_ROW_CALL);
   lcd.print(callsign);
 
-  lcd.setCursor(THERM_SYMBOL_COL, WETHER_ROW);
+  lcd.setCursor(THERM_SYMBOL_COL, WEATHER_ROW);
   lcd.write(THERM_SYMBOL);
 
-  lcd.setCursor(GRAD_SYMBOL_COL, WETHER_ROW);
-  lcd.print((char)223); //graden symbool
+  lcd.setCursor(GRAD_SYMBOL_COL, WEATHER_ROW);
+  lcd.print((char)223); //temperature degree symbol
   lcd.print("C");
 
-  lcd.setCursor(HUMIDITY_SYMBOL_COL, WETHER_ROW);
+  lcd.setCursor(HUMIDITY_SYMBOL_COL, WEATHER_ROW);
   lcd.write(HUMIDITY_SYMBOL);
 
-  lcd.setCursor(PROC_SYMBOL_COL, WETHER_ROW);
+  lcd.setCursor(PROC_SYMBOL_COL, WEATHER_ROW);
   lcd.print("%");
 
   lcd.setCursor(PRESSURE_SYMBOL_COL, PRESSURE_ROW);
   lcd.write(PRESSURE_SYMBOL);
   lcd.print("=");
   lcd.setCursor(MBAR_COL, PRESSURE_ROW);
-  lcd.print("mBar");
+  lcd.print("hPa");
 
-  Serial.println("Clock_Temp_Bar_Call " + String(VERSION_STRING));
+  Serial.println("Ham_Shack_Information_Display " + String(VERSION_STRING));
   Serial.println("Settings can be made via this serial interface.");
   handleCommand("", "");
 }
 
-void loop() {
+void loop() {   // begin of loop
   utc = now();
   time_t t = CE.toLocal(utc, &tcr);
+  
+  // Button backlight on/off routine
 
+  if (i == 0){lcd.setBacklight(LED_ON);}  else{lcd.setBacklight(LED_OFF);}
+
+  if (i == 0 && digitalRead(4) == HIGH && a == 1){i = 1;} else{} // Backlight ON
+  if (i == 1 && digitalRead(4) == HIGH && a == 0){i = 0;} else{} // Backlight OFF
+ 
+  if (i == 0 && digitalRead(4) == LOW){a = 1;} else{} // BL = OFF  Button clear
+  if (i == 1 && digitalRead(4) == LOW){a = 0;} else{} // BL = ON   Button clear
+  
   printTime(utc, LCD_COL_UTC , LCD_ROW_UTC );
   printTime(t  , LCD_COL_TIME, LCD_ROW_TIME);
   printDate(t  , LCD_COL_DATE, LCD_ROW_DATE);
@@ -247,7 +282,7 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - taskTimer >= taskTime) {
     taskTimer = currentMillis;
-    toon_weather();       //displaying temperatuur, vochtigheid en luchtdruk
+    show_weather();       //displaying temperature, humidity and air pressure
   }
 }
 
@@ -275,9 +310,9 @@ void handleCommand(String cmd, String par) {
     if ((par == "?") || (par == "")) {
       Serial.print("type ");
       Serial.print(CMD_CALL);
-      Serial.println(" folowed by callsign, like:");
+      Serial.println(" followed by callsign, like:");
       Serial.print(CMD_CALL);
-      Serial.println(" PA7FRN");
+      Serial.println(" PA0GTB");
     }
     else {
       callsign = par;
@@ -310,56 +345,34 @@ void handleCommand(String cmd, String par) {
     else {
       Serial.print("type ");
       Serial.print(CMD_DF);
-      Serial.println(" folowed by format. Valid formats are:");
+      Serial.println(" followed by format. Valid formats are:");
       Serial.print(CMD_DF);
       Serial.println(" dd_mm_yyyy");
       Serial.print(CMD_DF);
       Serial.println(" ddMMMyyyy");
     }
   }
-  else if (cmd == CDM_TIME) {
-    unsigned long pctime;
-    const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013
- 
-    pctime = par.toInt();
-    if( pctime >= DEFAULT_TIME) {
-      setTime(pctime); 
-      Serial.println("time set");
-    }
-    else {
-      Serial.println("give the amount of seconds from 00:00 01-01-1970");
-    }
-  }
-  else if (cmd ==  CMD_VERSION) {
-    Serial.println(VERSION_STRING);
-  }
-  else {
-    Serial.println("Valid commands are:");
-    Serial.print("  ");
-    Serial.print(CMD_CALL);
-    Serial.println(" to set the callsign"   );
-    Serial.print("  ");
-    Serial.print(CMD_DF);
-    Serial.println(" to set the date format");
-    Serial.print("  ");
-    Serial.print(CDM_TIME);
-    Serial.println(" to set date and time"  );
-    Serial.print("  ");
-    Serial.print(CMD_VERSION);
-    Serial.println(" gives the version number"  );
+   else {
+     Serial.println("Valid commands are:");
+     Serial.print("  ");
+     Serial.print(CMD_CALL);
+     Serial.println(" to set the callsign"   );
+     Serial.print("  ");
+     Serial.print(CMD_DF);
+     Serial.println(" to set the date format");
+     Serial.print("  ");
   }
 }
 
-void toon_weather() {
+void show_weather() {
   th.Read();
 
-  // Toon temperatuur, vochtigheid en luchtdruk op het display
-  sPrintRightAlign(th.t, 4, 1, THERM_VALUE_COL , WETHER_ROW);
-  sPrintRightAlign(th.h, 4, 1, HUMIDITY_VAL_COL, WETHER_ROW);
+  // Show Temperature and Humidity
+  sPrintRightAlign((th.t-2), 4, 1, THERM_VALUE_COL , WEATHER_ROW); // If neccesay, correction of temperature t-x / t+x on display ( shown -2)
+  sPrintRightAlign(th.h+0, 4, 1, HUMIDITY_VAL_COL, WEATHER_ROW);   // If neccesary, correction of humidity h-x / h+x on display   ( shown +0)
   
-  // barometer
-//sPrintRightAlign((bme.readPressure()/100), 4, 0, PRESSURE_VAL_COL, PRESSURE_ROW); // vrijzetten als sensor er straks aan hangt
-  sPrintRightAlign((101500            /100), 4, 0, PRESSURE_VAL_COL, PRESSURE_ROW); // Deze regel is nu alleen voor test op display
+  // Show Barometric Airpressure 
+  sPrintRightAlign((bme.readPressure()/100-1), 4, 1, PRESSURE_VAL_COL, PRESSURE_ROW); // If neccesary, correction of air pressure hPa on display (shown -1)
 }
 
 void printTime(time_t t, int col, int row) {
@@ -421,6 +434,7 @@ String stringFromEeprom(int eepromAddress) {
     resultString[i] = EEPROM.read(eepromAddress+1+i);
   }
   return resultString;
+
 }
   
 /* ( THE END ) */
